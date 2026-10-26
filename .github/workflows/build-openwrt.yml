@@ -47,13 +47,13 @@ jobs:
         sudo apt-get -qq clean
         df -hT /
 
-    -     - name: Initialization environment
+    - name: Initialization environment
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
         set -x
         # 24.04 的官方源是 deb822 格式的 /etc/apt/sources.list.d/ubuntu.sources，
-        # 清空后必须自己写回，否则所有包都 Unable to locate package
+        # 清空 sources.list.d 后必须自己把 noble 源写回去，否则所有包都 Unable to locate package
         sudo rm -rf /etc/apt/sources.list.d/*
         printf '%s\n' \
           'Types: deb' \
@@ -68,6 +68,7 @@ jobs:
           'Components: main restricted universe multiverse' \
           'Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg' \
           | sudo tee /etc/apt/sources.list.d/ubuntu.sources > /dev/null
+        # 老格式 sources.list 里若残留 bionic 条目也会让 update 失败，直接清空
         sudo sh -c 'echo "" > /etc/apt/sources.list'
         sudo apt-get update
         sudo apt-get install -y build-essential gcc g++ binutils bzip2 flex make cmake \
