@@ -57,13 +57,24 @@ fi
 sed -i "s/+luci-theme-bootstrap/+luci-theme-${default_theme}/g" "$theme_mk"
 echo "[+] 默认主题依赖已改为 ${default_theme}  (${theme_mk})"
 
-# ---------- 4. 校验 ----------
+# ---------- 4. cmake 4.x 兼容 ----------
+# v25.12.2 会自己编一个 host cmake 4.2.0，而 lucihttp 等旧包写的是
+# cmake_minimum_required(VERSION 2.6)，cmake 4 直接报错退出：
+#   Compatibility with CMake < 3.5 has been removed from CMake
+CMAKE_MK='include/cmake.mk'
+if [ -f "$CMAKE_MK" ] && ! grep -q 'CMAKE_POLICY_VERSION_MINIMUM' "$CMAKE_MK"; then
+  printf '\n# cmake 4.x: 放行 cmake_minimum_required < 3.5 的旧项目\nCMAKE_OPTIONS += -DCMAKE_POLICY_VERSION_MINIMUM=3.5\nCMAKE_HOST_OPTIONS += -DCMAKE_POLICY_VERSION_MINIMUM=3.5\n' >> "$CMAKE_MK"
+  echo "[+] cmake 4 兼容参数已写入 ${CMAKE_MK}"
+fi
+
+# ---------- 5. 校验 ----------
 fail=0
 check() { grep -q "$2" "$1" 2>/dev/null && echo "  [OK]   $3" || { echo "  [FAIL] $3"; fail=1; }; }
 check package/base-files/files/etc/uci-defaults/99-custom-k2p "hostname=\"${device_name}\"" "主机名"
 check package/base-files/files/etc/uci-defaults/99-custom-k2p "${lan_ip}"                 "LAN IP"
 check package/base-files/files/etc/uci-defaults/99-custom-k2p "CST-8"                     "时区"
 check "$theme_mk" "luci-theme-${default_theme}"                                            "主题依赖"
+check "$CMAKE_MK" "CMAKE_POLICY_VERSION_MINIMUM"                                           "cmake 4 兼容参数"
 [ "$fail" -eq 0 ] || { echo "[x] 有定制项未生效，检查源码结构"; exit 1; }
 
 echo "[✓] diy-part2.sh finished"
