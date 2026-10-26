@@ -1,36 +1,41 @@
 #!/bin/bash
 #============================================================
-# https://github.com/P3TERX/Actions-OpenWrt
-# File name: diy-part2.sh
-# Description: OpenWrt DIY script part 2 (After Update feeds)
-# Lisence: MIT
-# Author: P3TERX
-# Blog: https://p3terx.com
+# diy-part2 for K2P phicomm_k2p
+# After Update feeds | For ImmortalWrt openwrt‑25.12
 #============================================================
 
-device_name='PSG1208'
-wifi_name='PHICOMM'
-lan_ip='192.168.2.1'        # Lan Ip地址
-utc_name='Asia\/Shanghai'   # 时区
+device_name='K2P'
+wifi_name='K2P'
+lan_ip='192.168.2.1'
+utc_name='Asia/Shanghai'
 default_theme='argon'
 
- 
-# 修改机器名称
-echo "设置主机名"
-sed -i "s/OpenWrt/$device_name/g" package/base-files/files/bin/config_generate
+# 创建开机自动执行的uci-defaults脚本，首次启动自动配置
+mkdir -p package/base-files/files/etc/uci-defaults
+cat > package/base-files/files/etc/uci-defaults/99-custom-k2p <<EOF
+#!/bin/sh
+# 设置主机名
+uci set system.@system[0].hostname="${device_name}"
+# 设置LAN IP
+uci set network.lan.ipaddr="${lan_ip}"
+# 设置时区
+uci set system.@system[0].timezone='CST-8'
+uci set system.@system[0].zonename='${utc_name}'
+# 设置LuCI默认主题
+uci set luci.main.mediaurlbase="/luci-static/${default_theme}"
+uci commit system
+uci commit network
+uci commit luci
+exit 0
+EOF
+chmod +x package/base-files/files/etc/uci-defaults/99-custom-k2p
+echo "[+] 写入uci‑defaults系统配置(主机名/IP/时区/主题)"
 
-# 设置lan ip
-echo "设置lan ip"
-sed -i "s/192.168.1.1/$lan_ip/g" package/base-files/files/bin/config_generate
+# 尝试修改mac80211默认wifi名称（兼容旧版本，新版可能无效）
+wifi_file="package/kernel/mac80211/files/lib/wifi/mac80211.sh"
+if [ -f "${wifi_file}" ]; then
+  echo "[+] 修改mac80211默认WiFi SSID: ${wifi_name}"
+  sed -i "s/OpenWrt/${wifi_name}/g" "${wifi_file}"
+fi
 
-# 修改默认时区
-echo "修改时区"
-sed -i "s/'UTC'/'CST-8'\n   set system.@system[-1].zonename='$utc_name'/g" package/base-files/files/bin/config_generate
-     
-# 修改wifi名称
-echo "修改wifi名称"
-sed -i "s/OpenWrt/$wifi_name/g" package/kernel/mac80211/files/lib/wifi/mac80211.sh
-
-# 修改默认主题
-echo "修改默认主题"
-sed -i 's/bootstrap/$default_theme/g' feeds/luci/collections/luci/Makefile
+echo "[✓] diy-part2.sh finished"
