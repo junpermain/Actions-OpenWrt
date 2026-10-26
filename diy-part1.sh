@@ -1,22 +1,19 @@
 #!/bin/bash
 #=============================================================
-# https://github.com/P3TERX/Actions-OpenWrt
-# File name: diy-part1.sh
-# Description: OpenWrt DIY script part 1 (Before Update feeds)
-# Lisence: MIT
-# Author: P3TERX
-# Blog: https://p3terx.com
+# diy-part1.sh For ImmortalWrt openwrt‑25.12 K2P
+# Before Update feeds
 #=============================================================
 
-# Uncomment a feed source
-#sed -i 's/^#\(.*helloworld\)/\1/' feeds.conf.default
+# 清理旧package，避免重复克隆
+rm -rf package/luci-theme-argon
+rm -rf package/luci-app-openclash
 
-# Add a feed source
-#sed -i '$a src-git lienol https://github.com/Lienol/openwrt-package' feeds.conf.default
+# 1. 拉取 Argon 主题（适配新版本luci）
+git clone https://github.com/jerrykuku/luci-theme-argon.git package/luci-theme-argon
+
+# 2. 拉取 OpenClash
+git clone https://github.com/vernesong/OpenClash.git package/luci-app-openclash
+
+# 【注意】下面老源对25.12兼容性差，请勿启用
 #sed -i '$a src-git kenzo https://github.com/kenzok8/openwrt-packages' feeds.conf.default
 #sed -i '$a src-git small https://github.com/kenzok8/small' feeds.conf.default
-
-# Define My Package
-#git clone https://github.com/fw876/helloworld.git                                   package/molun/luci-app-ssr-plus
-#git clone https://github.com/rufengsuixing/luci-app-adguardhome.git                 package/molun/luci-app-adguardhome
-#git clone https://github.com/vernesong/OpenClash.git                                package/molun/luci-app-openclash
